@@ -692,6 +692,43 @@ pub fn stroke_circle(
     Ok(output.end_geometry())
 }
 
+/// Tessellate the stroke for an arc.
+pub fn stroke_arc(
+    center: Point,
+    angle_in: f32,
+    radius: f32,
+    options: &StrokeOptions,
+    output: &mut dyn GeometryBuilder<StrokeVertex>
+) -> TessellationResult {
+    output.begin_geometry();
+
+    let radius = radius.abs();
+    if radius == 0.0 {
+        return Ok(output.end_geometry());
+    }
+
+    let angle = (0.0, angle_in);
+    let starting_point = center + vector(1.0, 0.0) * radius;
+
+    let arc_len = angle_in * radius;
+    let step = circle_flattening_step(radius, options.tolerance);
+    let num_points = (arc_len / step).ceil() as u32 - 1;
+
+    { // output borrow scope start
+        let mut builder = StrokeBuilder::new(options, output);
+        builder.move_to(starting_point);
+        stroke_border_radius(
+            center,
+            angle,
+            radius,
+            num_points,
+            &mut builder,
+        );
+    } // output borrow scope end
+
+    Ok(output.end_geometry())
+}
+
 // tessellate the stroke for rounded corners using the inner points.
 // assumming the builder started with move_to().
 fn stroke_border_radius(
