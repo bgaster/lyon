@@ -695,7 +695,8 @@ pub fn stroke_circle(
 /// Tessellate the stroke for an arc.
 pub fn stroke_arc(
     center: Point,
-    angle_in: f32,
+    angle_begin: f32,
+    angle_end: f32,
     radius: f32,
     options: &StrokeOptions,
     output: &mut dyn GeometryBuilder<StrokeVertex>
@@ -707,10 +708,12 @@ pub fn stroke_arc(
         return Ok(output.end_geometry());
     }
 
-    let angle = (0.0, angle_in);
-    let starting_point = center + vector(1.0, 0.0) * radius;
+    let angle = (angle_begin, angle_end);
+    let starting_point = point(
+        center.x + angle_begin.cos() * radius,
+        center.y + angle_begin.sin() * radius);
 
-    let arc_len = angle_in * radius;
+    let arc_len = angle_end * radius;
     let step = circle_flattening_step(radius, options.tolerance);
     let num_points = (arc_len / step).ceil() as u32 - 1;
 
